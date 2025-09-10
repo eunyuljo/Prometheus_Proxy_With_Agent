@@ -85,10 +85,29 @@ prometheus_proxy_agent_info = {
 ## 📊 메트릭 수집 경로
 
 ### 1. 직접 수집 (VPC 1)
-- Prometheus 자체 메트릭
-- Blackbox Exporter 메트릭
+- **prometheus**: Prometheus 자체 메트릭 (9090/metrics)
+- **Blackbox Exporter**: 외부 엔드포인트 모니터링 (9115/metrics)
 
-### 2. Proxy를 통한 수집 (VPC 2)
+### 2. Proxy를 통한 자동 수집 (VPC 2)
+Prometheus가 다음 job으로 자동 수집합니다:
+
+```yaml
+# prometheus.yml에 자동 설정됨
+scrape_configs:
+  - job_name: "proxy-agent-metrics"
+    static_configs:
+      - targets: ["localhost:8080"]
+    metrics_path: "/eyjo-test-proxy-agent-ne"
+    scrape_interval: 10s
+
+  - job_name: "private-instance-metrics"  
+    static_configs:
+      - targets: ["localhost:8080"]
+    metrics_path: "/private-instance-node-exporter"
+    scrape_interval: 10s
+```
+
+### 3. 수동 확인 방법
 ```bash
 # Proxy Agent 자체 Node Exporter
 curl http://<prometheus-eip>:8080/eyjo-test-proxy-agent-ne
@@ -105,8 +124,12 @@ curl http://<prometheus-eip>:8080/private-instance-node-exporter
 - `user-data-node-exporter.sh`: Node Exporter 설치
 
 ### 주요 설정
-- **Prometheus 설정**: `/mzc/monitoring/prometheus/prometheus.yml`
-- **Agent 설정**: `/mzc/monitoring/prometheus-proxy-agent/agent.conf`
+- **Prometheus 설정**: `/mzc/monitoring/prometheus/prometheus.yml` (자동 생성됨)
+- **Agent 설정**: `/mzc/monitoring/prometheus-proxy-agent/agent.conf` (자동 생성됨)
+
+### 자동 생성되는 설정들
+- Prometheus는 배포 시 모든 Proxy Agent 메트릭을 수집하도록 자동 설정
+- Agent는 자체 Node Exporter + Private Instance Node Exporter 수집 설정
 
 ## 🛠️ 리소스 구성
 
@@ -116,12 +139,12 @@ curl http://<prometheus-eip>:8080/private-instance-node-exporter
 - **네트워크**: Public subnet, EIP 할당
 
 ### VPC 2 (Monitoring Targets)
-- **Proxy Agent**: t3.medium, Public subnet, EIP 할당
-- **Private Instance**: t3.medium, Private subnet, SSM 접근만
+- **Proxy Agent**: t3.medium, Public subnet, EIP 할당, Node Exporter 포함
+- **Private Instance**: t3.medium, Private subnet, SSM 접근만, Node Exporter 포함
 
 ### 보안 그룹
 - **Prometheus**: 22, 80, 443, 9090, 9093, 8080, 50051, 9115
-- **Proxy Agent**: 22, 80, 443
+- **Proxy Agent**: 22, 80, 443, 9100
 - **Private Instance**: 22, 9100 (VPC 내부만)
 
 ## 🔒 보안 설정
@@ -137,8 +160,12 @@ curl http://<prometheus-eip>:8080/private-instance-node-exporter
 # Prometheus에서 모든 타겟 확인
 curl http://<prometheus-eip>:9090/api/v1/targets
 
-# 특정 메트릭 쿼리
-curl 'http://<prometheus-eip>:9090/api/v1/query?query=up'
+# 자동 수집되는 job들 확인
+curl 'http://<prometheus-eip>:9090/api/v1/query?query=up{job="proxy-agent-metrics"}'
+curl 'http://<prometheus-eip>:9090/api/v1/query?query=up{job="private-instance-metrics"}'
+
+# Node Exporter 메트릭 확인
+curl 'http://<prometheus-eip>:9090/api/v1/query?query=node_uname_info'
 ```
 
 ### 서비스 상태 확인
