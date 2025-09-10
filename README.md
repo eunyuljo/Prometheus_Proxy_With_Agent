@@ -13,9 +13,9 @@ AWS에서 Prometheus Proxy를 사용한 멀티 VPC 모니터링 시스템을 구
 ```
 ┌─────────────────────────────────────┐    ┌─────────────────────────────────────┐
 │               VPC 1                 │    │               VPC 2                 │
-│         (10.0.0.0/16)              │    │         (10.1.0.0/16)              │
+│         (10.0.0.0/16)               │    │         (10.1.0.0/16)               │
 ├─────────────────────────────────────┤    ├─────────────────────────────────────┤
-│  Public Subnet (ap-northeast-2a)   │    │  Public Subnet (ap-northeast-2a)   │
+│  Public Subnet (ap-northeast-2a)    │    │  Public Subnet (ap-northeast-2a)    │
 │  ┌─────────────────────────────────┐│    │  ┌─────────────────────────────────┐│
 │  │    Prometheus Server            ││    │  │   Prometheus Proxy Agent        ││
 │  │  - Prometheus (9090)            ││    │  │  - Collects metrics             ││
@@ -23,11 +23,11 @@ AWS에서 Prometheus Proxy를 사용한 멀티 VPC 모니터링 시스템을 구
 │  │  - Prometheus Proxy (8080)      ││    │  │  - Node Exporter (9100)         ││
 │  │  - Node Exporter (9100)         ││    │  └─────────────────────────────────┘│
 │  │  - Blackbox Exporter (9115)     ││    │                                     │
-│  └─────────────────────────────────┘│    │  Private Subnet (ap-northeast-2a)  │
+│  └─────────────────────────────────┘│    │  Private Subnet (ap-northeast-2a)   │
 │                                     │    │  ┌─────────────────────────────────┐│
 │                                     │    │  │    Private Instance             ││
 │                                     │    │  │  - Node Exporter (9100)         ││
-│                                     │    │  │  - Monitored via SSM             ││
+│                                     │    │  │  - Monitored via SSM            ││
 │                                     │    │  └─────────────────────────────────┘│
 └─────────────────────────────────────┘    └─────────────────────────────────────┘
 ```
@@ -45,7 +45,6 @@ AWS에서 Prometheus Proxy를 사용한 멀티 VPC 모니터링 시스템을 구
 ```bash
 # 저장소 클론
 git clone <repository-url>
-cd Prometheus_Proxy_with_Terraform
 
 # Terraform 초기화
 terraform init

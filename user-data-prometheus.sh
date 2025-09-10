@@ -75,6 +75,51 @@ systemctl enable alertmanager
 yum install -y net-tools
 
 # Log installation completion
+# Prometheus 설정 파일 생성 (Proxy Agent 메트릭 수집 포함)
+cat <<EOF > /mzc/monitoring/prometheus/prometheus.yml
+# my global config
+global:
+  scrape_interval: 15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  # scrape_timeout is set to the global default (10s).
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label job=<job_name> to any timeseries scraped from this config.
+  - job_name: "prometheus"
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Proxy Agent 메트릭 수집
+  - job_name: "proxy-agent-metrics"
+    static_configs:
+      - targets: ["localhost:8080"]
+    metrics_path: "/eyjo-test-proxy-agent-ne"
+    scrape_interval: 10s
+
+  # Private Instance 메트릭 수집
+  - job_name: "private-instance-metrics"
+    static_configs:
+      - targets: ["localhost:8080"]
+    metrics_path: "/private-instance-node-exporter"
+    scrape_interval: 10s
+EOF
+
 echo "Prometheus and Alertmanager installation completed" >> /var/log/user-data.log
 echo "Checking ports:" >> /var/log/user-data.log
 netstat -ntpl | egrep "9090|9093" >> /var/log/user-data.log
